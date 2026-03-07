@@ -111,8 +111,6 @@ const MCP_URL  = 'https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com/mcp';
 const RESOURCE = 'https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com';
 ```
 
-You can find your environment URL in the browser address bar when you open D365 (e.g. `https://mycompany.sandbox.operations.eu.dynamics.com`).
-
 ### Step 4: Configure Claude Code
 
 Copy the example config to your project root (or `~/.claude/.mcp.json` for global config):
@@ -145,7 +143,7 @@ A few things to keep in mind:
 ### Step 5: Test it
 
 1. Open Claude Code in VSCode or terminal.
-2. Check the MCP server status — `dynamics365` should show up.
+2. Check the MCP server status — `dynamics365fo` should show up.
 3. Try something like: *"Find the SalesOrderHeaders entity in D365"*.
 
 ## Files
@@ -155,7 +153,7 @@ claude-code-d365fo-mcp/
 ├── README.md                       # You're reading it
 ├── mcp-dynamics365fo-proxy.mjs     # The proxy (stdio ↔ HTTP)
 ├── .mcp.json                       # Claude Code MCP config template
-└── d365foMCPclient_form.jpg        # Screenshot of the D365 config form
+└── d365foMCPclient_form.jpg        # Screenshot of the D365fo config form
 ```
 
 ## Troubleshooting

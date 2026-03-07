@@ -17,10 +17,10 @@ The D365 F&O MCP server, on the other hand, is a **remote HTTP endpoint** behind
 The idea is simple: a tiny Node.js script sits in the middle and translates between the two worlds.
 
 ```
-┌─────────────┐  stdio (JSON-RPC)  ┌──────────────────┐  HTTPS + Bearer  ┌──────────────────┐
-│ Claude Code │ ◄───────────────►  │ mcp-dynamics365fo│ ◄──────────────► │ D365 F&O MCP     │
-│ (IDE/CLI)   │  stdin / stdout    │ proxy.mjs        │  HTTP POST       │ Server (remote)  │
-└─────────────┘                    └──────────────────┘                  └──────────────────┘
+┌─────────────┐  stdio (JSON-RPC)  ┌───────────────────┐  HTTPS + Bearer  ┌──────────────────┐
+│ Claude Code │ ◄───────────────►  │ mcp-dynamics365fo │ ◄──────────────► │ D365 F&O MCP     │
+│ (IDE/CLI)   │  stdin / stdout    │ proxy.mjs         │  HTTP POST       │ Server (remote)  │
+└─────────────┘                    └───────────────────┘                  └──────────────────┘
                                           │
                                           │ az account get-access-token
                                           ▼
@@ -126,7 +126,7 @@ Then edit `.mcp.json`:
 ```json
 {
   "mcpServers": {
-    "dynamics365": {
+    "dynamics365fo": {
       "command": "node",
       "args": ["/absolute/path/to/mcp-dynamics365fo-proxy.mjs"],
       "env": {
@@ -154,7 +154,7 @@ A few things to keep in mind:
 claude-code-d365fo-mcp/
 ├── README.md                       # You're reading it
 ├── mcp-dynamics365fo-proxy.mjs     # The proxy (stdio ↔ HTTP)
-├── .mcp.json.example               # Claude Code MCP config template
+├── .mcp.json                       # Claude Code MCP config template
 └── d365foMCPclient_form.jpg        # Screenshot of the D365 config form
 ```
 

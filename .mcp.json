@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "dynamics365fo": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-dynamics365fo-proxy.mjs"],
+      "env": {
+        "PATH": "/usr/local/bin:/usr/bin:/bin"
+      }
+    }
+  }
+}

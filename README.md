@@ -8,7 +8,7 @@ Tested on WSL Ubuntu, VSCode with Azure CLI Extension installed.
 
 ## Why is this needed?
 
-Claude Code talks to MCP servers over **stdio** — it spawns a process and sends JSON-RPC through stdin/stdout. That's it, no HTTP, no WebSocket (as of now).
+Claude Code talks to MCP servers over **stdio** — it spawns a process and sends JSON-RPC through stdin/stdout.
 
 The D365 F&O MCP server, on the other hand, is a **remote HTTP endpoint** behind **Azure AD authentication**. So there's a gap — and this proxy fills it.
 

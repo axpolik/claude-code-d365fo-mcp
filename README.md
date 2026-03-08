@@ -6,11 +6,22 @@ Once set up, you can query D365 data, navigate forms, and call custom X++ action
 
 Tested on WSL Ubuntu, VSCode with Azure CLI Extension installed.
 
-## Why is this needed?
+## Why is this needed? 
+**Why not connect directly via HTTP?**
 
-Claude Code talks to MCP servers over **stdio** — it spawns a process and sends JSON-RPC through stdin/stdout.
+While the Model Context Protocol (MCP) officially supports HTTP transport (via Server-Sent Events - SSE), connecting Claude Code directly to a remote Dynamics 365 F&O MCP server isn't straightforward. This proxy bridges the gap by solving three main architectural constraints:
 
-The D365 F&O MCP server, on the other hand, is a **remote HTTP endpoint** behind **Azure AD authentication**. So there's a gap — and this proxy fills it.
+***1. No native support for dynamic HTTP headers (Authentication)***
+Claude Code's configuration relies on static setups. Connecting to D365 F&O requires dynamically injecting an `Authorization: Bearer <token>` header into the requests. Claude Code currently lacks a built-in mechanism to dynamically fetch an Entra ID (Azure AD) token and inject it into the HTTP headers on the fly.
+
+***2. Token Expiration (Entra ID)***
+Even if you could hardcode a Bearer token into the Claude Code configuration, Entra ID access tokens typically expire within 60-90 minutes. A static configuration would lead to `401 Unauthorized` errors after an hour of work. This Node.js proxy solves this by dynamically fetching and managing valid tokens via the Azure CLI in the background.
+
+***3. Claude Code's `stdio` design***
+Claude Code is primarily a developer CLI tool designed to interact with local resources. It natively prefers spawning MCP servers as local child processes communicating over `stdio`. 
+
+**The Solution:** This proxy acts as an adapter. From Claude Code's perspective, it's just a simple local script running via `stdio`. From D365 F&O's perspective, it's a properly authenticated HTTP/SSE client making requests with valid Bearer tokens.
+
 
 ## How it works
 
@@ -38,26 +49,11 @@ The idea is simple: a tiny Node.js script sits in the middle and translates betw
 
 ## Design decisions
 
-**Why is this proxy necessary?** (Why not connect directly via HTTP?)
-
-While the Model Context Protocol (MCP) officially supports HTTP transport (via Server-Sent Events - SSE), connecting Claude Code directly to a remote Dynamics 365 F&O MCP server isn't straightforward. This proxy bridges the gap by solving three main architectural constraints:
-
-### 1. No native support for dynamic HTTP headers (Authentication)
-Claude Code's configuration relies on static setups. Connecting to D365 F&O requires dynamically injecting an `Authorization: Bearer <token>` header into the requests. Claude Code currently lacks a built-in mechanism to dynamically fetch an Entra ID (Azure AD) token and inject it into the HTTP headers on the fly.
-
-### 2. Token Expiration (Entra ID)
-Even if you could hardcode a Bearer token into the Claude Code configuration, Entra ID access tokens typically expire within 60-90 minutes. A static configuration would lead to `401 Unauthorized` errors after an hour of work. This Node.js proxy solves this by dynamically fetching and managing valid tokens via the Azure CLI in the background.
-
-### 3. Claude Code's `stdio` design
-Claude Code is primarily a developer CLI tool designed to interact with local resources. It natively prefers spawning MCP servers as local child processes communicating over `stdio`. 
-
-**The Solution:** This proxy acts as an adapter. From Claude Code's perspective, it's just a simple local script running via `stdio`. From D365 F&O's perspective, it's a properly authenticated HTTP/SSE client making requests with valid Bearer tokens.
-
 **Why Azure CLI for auth?** The D365 MCP server needs Azure AD tokens. Using `az account get-access-token` is the path of least resistance — no client secrets to manage, no app registrations to create, just your existing `az login` session. It works with MFA, conditional access, all of that.
 
 **Why refresh tokens every 45 min?** Azure AD tokens expire after roughly 60–75 minutes. The proxy refreshes proactively every 45 min so you don't get random failures in the middle of a conversation.
 
-**Why handle SSE?** D365 sometimes responds with `text/event-stream` instead of plain JSON. The proxy handles both transparently — you don't need to worry about it.
+**Why handle SSE by proxy?** D365 sometimes responds with `text/event-stream` instead of plain JSON. The proxy handles both transparently — you don't need to worry about it.
 
 ## About the ClientID
 

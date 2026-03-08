@@ -205,7 +205,7 @@ D365 F&O can return massive JSON payloads (data entities, metadata). Querying it
 
 **Example: Initial prompt for new Claude Code session with memory file used**
 
-```json
+```txt
 ## Session context:
 - The file `d365fo-mcp-memory.md` in the project root is a local cache for dynamics365fo MCP tool data
 - Before any query to the dynamics365fo MCP tool, check this file first — if data is there and current, use it without calling MCP tools

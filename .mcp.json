@@ -1,10 +1,12 @@
 {
   "mcpServers": {
     "dynamics365fo": {
-      "command": "node",
+      "command": "/absolute/path/to/node",
       "args": ["/absolute/path/to/mcp-dynamics365fo-proxy.mjs"],
       "env": {
-        "PATH": "/usr/local/bin:/usr/bin:/bin"
+        "PATH": "/mnt/c/Program Files/Microsoft SDKs/Azure/CLI2/wbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "D365_MCP_URL": "https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com/mcp",
+        "D365_RESOURCE": "https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com"
       }
     }
   }

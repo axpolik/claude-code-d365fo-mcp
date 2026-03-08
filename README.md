@@ -203,7 +203,7 @@ D365 F&O can return massive JSON payloads (data entities, metadata). Querying it
 - **Filter heavily:** Always instruct Claude to use limits like `$top`, `$select`, or `$filter` to fetch only the exact rows and columns you need.
 - **💡 Pro Tip: Use local files as "memory":** Ask Claude to save frequently used, static D365 data (like schemas, metadata, or specific IDs) into a local file (e.g., `d365_memory.md`). Claude can read this file later instead of re-querying the MCP server, saving a huge amount of tokens!
 
-**Example: Initial prompt for new Claude Code session with memory file used**
+**Example: Initial prompt for a new Claude Code session using a memory file**
 
 ```txt
 ## Session context:

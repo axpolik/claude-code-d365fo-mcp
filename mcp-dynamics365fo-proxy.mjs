@@ -12,10 +12,15 @@
 import { execSync } from 'child_process';
 import { createInterface } from 'readline';
 
-// ── Configuration ──────────────────────────────────────────────────────────────
-// Replace with your Dynamics 365 F&O environment URL
-const MCP_URL  = 'https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com/mcp';
-const RESOURCE = 'https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com';
+// ── Configuration (via environment variables in .mcp.json) ─────────────────────
+const MCP_URL  = process.env.D365_MCP_URL;
+const RESOURCE = process.env.D365_RESOURCE;
+
+if (!MCP_URL || !RESOURCE) {
+  process.stderr.write('[mcp-proxy] ERROR: D365_MCP_URL and D365_RESOURCE environment variables are required.\n');
+  process.stderr.write('[mcp-proxy] Set them in your .mcp.json under "env".\n');
+  process.exit(1);
+}
 // ───────────────────────────────────────────────────────────────────────────────
 
 function getToken() {

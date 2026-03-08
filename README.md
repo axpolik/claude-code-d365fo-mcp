@@ -57,14 +57,16 @@ The idea is simple: a tiny Node.js script sits in the middle and translates betw
 
 ## About the ClientID
 
-This is the **Azure CLI client ID** — a first-party Microsoft app registered in Azure AD. It's the same for everyone worldwide. You don't need to create your own app registration.
+**The Azure CLI Client ID is:** `04b07795-8ddb-461a-bbee-02f9e1bf7b46`
 
-When you run `az login`, you authenticate through this app. The proxy's `az account get-access-token` call produces a token issued under this client ID.
+This is a first-party Microsoft app registered in Azure AD — the same for all Azure CLI users worldwide. You don't need to create your own app registration. Just copy this ID into the D365 "Allowed MCP clients" form in Step 2.
 
-**How to find yours:**
+Note: this is different from the default VSCode [ClientID](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/copilot/copilot-mcp#allowed-mcp-clients).
+
+**Optional — verify it yourself:**
 1. Run: `az account get-access-token --resource https://YOUR-ENVIRONMENT.operations.dynamics.com --query accessToken -o tsv`
 2. Paste the token into [jwt.ms](https://jwt.ms)
-3. Check the `appid` claim — that's your ClientID (this is different from the default VSCode [ClientID](https://learn.microsoft.com/en-us/dynamics365/fin-ops-core/dev-itpro/copilot/copilot-mcp#allowed-mcp-clients))
+3. Check the `appid` claim — it should match the ID above.
 
 More info: [Microsoft docs — Sign in with Azure CLI](https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
 
@@ -99,45 +101,40 @@ This part is important — D365 won't accept MCP connections unless the client a
 2. Go to **System administration** and search for **"Allowed MCP clients"**.
 3. Add a new row:
    - **Name**: `AzureCLI-ClaudeCode` (or whatever you like)
-   - **ClientId**: `[Your ClientID]`
+   - **ClientId**: `04b07795-8ddb-461a-bbee-02f9e1bf7b46`
    - **Allowed**: `true`
 4. Save.
 
 ![Allowed MCP Clients form in D365](d365foMCPclient_form.jpg)
 
-### Step 3: Configure the proxy
-
-Clone or copy the files:
+### Step 3: Clone the repo
 
 ```bash
 git clone https://github.com/axpolik/claude-code-d365fo-mcp.git
 ```
 
-Open `mcp-dynamics365fo-proxy.mjs` and replace the placeholder URLs:
-
-```javascript
-const MCP_URL  = 'https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com/mcp';
-const RESOURCE = 'https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com';
-```
+No need to edit the proxy script — all configuration is done through environment variables in `.mcp.json`.
 
 ### Step 4: Configure Claude Code
 
-Copy the example config to your project root (or `~/.claude/.mcp.json` for global config):
+Copy `.mcp.json` to your project root (or `~/.claude/.mcp.json` for global config):
 
 ```bash
 cp .mcp.json /path/to/your/project/.mcp.json
 ```
 
-Then edit `.mcp.json`:
+Then edit `.mcp.json` — set your D365 environment URL and the path to the proxy script:
 
 ```json
 {
   "mcpServers": {
     "dynamics365fo": {
-      "command": "node",
+      "command": "/absolute/path/to/node",
       "args": ["/absolute/path/to/mcp-dynamics365fo-proxy.mjs"],
       "env": {
-        "PATH": "/usr/local/bin:/usr/bin:/bin"
+        "PATH": "/mnt/c/Program Files/Microsoft SDKs/Azure/CLI2/wbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+        "D365_MCP_URL": "https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com/mcp",
+        "D365_RESOURCE": "https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com"
       }
     }
   }
@@ -147,6 +144,7 @@ Then edit `.mcp.json`:
 A few things to keep in mind:
 - `command` — can be just `"node"` if it's in your PATH, or the full path like `"/home/user/.nvm/versions/node/v22.22.0/bin/node"`.
 - `args` — needs the **absolute path** to the proxy script.
+- `D365_MCP_URL` / `D365_RESOURCE` — your D365 F&O environment URL. Find it in the browser address bar when you open D365 (e.g. `https://mycompany.sandbox.operations.eu.dynamics.com`).
 - `env.PATH` — must include the directory where `az` lives. On WSL you might need to add the Windows-side path too (see Troubleshooting).
 
 ### Step 5: Test it
@@ -171,11 +169,19 @@ claude-code-d365fo-mcp/
 
 **Proxy starts but no tools show up** — Check three things: (1) MCP server is enabled on your D365 environment, (2) your ClientID is in the "Allowed MCP clients" form, (3) your Azure AD user has the right D365 security roles.
 
-**"fetch is not defined"** — You need Node.js 22+. On older versions, add the flag:
+**"fetch is not defined"** — You need Node.js 22+ (which has native `fetch`). On Node 18–21, add the `--experimental-fetch` flag as a Node.js argument *before* the script path in `.mcp.json`:
 
 ```json
 "args": ["--experimental-fetch", "/path/to/mcp-dynamics365fo-proxy.mjs"]
 ```
+
+**How to debug the proxy locally?** — If Claude Code isn't showing any tools, run the proxy directly in your terminal to see raw errors:
+```bash
+D365_MCP_URL="https://YOUR-ENV.operations.dynamics.com/mcp" \
+D365_RESOURCE="https://YOUR-ENV.operations.dynamics.com" \
+node mcp-dynamics365fo-proxy.mjs
+```
+If it crashes, you'll see the Node.js error stack immediately. If it waits silently, it's running correctly and waiting for JSON-RPC input from stdin.
 
 **PATH issues on WSL** — If `az` is installed on the Windows side, add it to the PATH in `.mcp.json`:
 
@@ -188,6 +194,14 @@ claude-code-d365fo-mcp/
 ## D365 MCP Tools
 
 Once connected, you get three categories of tools: **data** (OData CRUD), **form** (UI navigation), and **API** (custom X++ calls). For CRUD operations, prefer data tools — currently they are faster and more reliable.
+
+## ⚠️ High Token Consumption Warning
+
+D365 F&O can return massive JSON payloads (data entities, metadata). Querying it without limits will quickly drain your Claude context window and increase API costs.
+
+**How to minimize token usage:**
+- **Filter heavily:** Always instruct Claude to use limits like `$top`, `$select`, or `$filter` to fetch only the exact rows and columns you need.
+- **💡 Pro Tip: Use local files as "memory":** Ask Claude to save frequently used, static D365 data (like schemas, metadata, or specific IDs) into a local file (e.g., `d365_memory.md`). Claude can read this file later instead of re-querying the MCP server, saving a huge amount of tokens!
 
 ## License
 

@@ -38,7 +38,7 @@ The idea is simple: a tiny Node.js script sits in the middle and translates betw
 
 ## Design decisions
 
-** Why is this proxy necessary? ** (Why not connect directly via HTTP?)
+**Why is this proxy necessary?** (Why not connect directly via HTTP?)
 
 While the Model Context Protocol (MCP) officially supports HTTP transport (via Server-Sent Events - SSE), connecting Claude Code directly to a remote Dynamics 365 F&O MCP server isn't straightforward. This proxy bridges the gap by solving three main architectural constraints:
 

@@ -38,7 +38,20 @@ The idea is simple: a tiny Node.js script sits in the middle and translates betw
 
 ## Design decisions
 
-**Why a proxy at all?** Because Claude Code only speaks stdio. The D365 MCP server only speaks HTTP. Someone has to translate, and a ~100-line script is the simplest way to do it.
+** Why is this proxy necessary? ** (Why not connect directly via HTTP?)
+
+While the Model Context Protocol (MCP) officially supports HTTP transport (via Server-Sent Events - SSE), connecting Claude Code directly to a remote Dynamics 365 F&O MCP server isn't straightforward. This proxy bridges the gap by solving three main architectural constraints:
+
+### 1. No native support for dynamic HTTP headers (Authentication)
+Claude Code's configuration relies on static setups. Connecting to D365 F&O requires dynamically injecting an `Authorization: Bearer <token>` header into the requests. Claude Code currently lacks a built-in mechanism to dynamically fetch an Entra ID (Azure AD) token and inject it into the HTTP headers on the fly.
+
+### 2. Token Expiration (Entra ID)
+Even if you could hardcode a Bearer token into the Claude Code configuration, Entra ID access tokens typically expire within 60-90 minutes. A static configuration would lead to `401 Unauthorized` errors after an hour of work. This Node.js proxy solves this by dynamically fetching and managing valid tokens via the Azure CLI in the background.
+
+### 3. Claude Code's `stdio` design
+Claude Code is primarily a developer CLI tool designed to interact with local resources. It natively prefers spawning MCP servers as local child processes communicating over `stdio`. 
+
+**The Solution:** This proxy acts as an adapter. From Claude Code's perspective, it's just a simple local script running via `stdio`. From D365 F&O's perspective, it's a properly authenticated HTTP/SSE client making requests with valid Bearer tokens.
 
 **Why Azure CLI for auth?** The D365 MCP server needs Azure AD tokens. Using `az account get-access-token` is the path of least resistance — no client secrets to manage, no app registrations to create, just your existing `az login` session. It works with MFA, conditional access, all of that.
 

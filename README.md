@@ -116,7 +116,7 @@ const RESOURCE = 'https://YOUR-ENVIRONMENT.sandbox.operations.dynamics.com';
 Copy the example config to your project root (or `~/.claude/.mcp.json` for global config):
 
 ```bash
-cp .mcp.json.example /path/to/your/project/.mcp.json
+cp .mcp.json /path/to/your/project/.mcp.json
 ```
 
 Then edit `.mcp.json`:
